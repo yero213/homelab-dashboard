@@ -3,7 +3,7 @@ version: "3.9"
 services:
   # ─── Central Dashboard ──────────────────────────────────────────
   dashboard:
-    build: ./central-dashboard
+    image: ghcr.io/yero213/homelab-dashboard:latest
     container_name: homelab-dashboard
     ports:
       - "8000:8000"
@@ -22,7 +22,7 @@ services:
 
   # ─── Agent voor UmbrelOS ────────────────────────────────────────
   agent-umbrelos:
-    build: ./server-agent
+    image: ghcr.io/yero213/homelab-agent:latest
     container_name: homelab-agent-umbrelos
     ports:
       - "9100:9100"
@@ -43,7 +43,7 @@ services:
   # de Ubuntu-machine en is deze service niet nodig in docker-compose.
   # Voor lokale ontwikkeling/homelab houden we hem erbij.
   agent-ubuntu:
-    build: ./server-agent
+    image: ghcr.io/yero213/homelab-agent:latest
     container_name: homelab-agent-ubuntu
     ports:
       - "9101:9100"  # interne poort 9100, extern 9101
