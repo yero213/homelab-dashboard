@@ -40,6 +40,9 @@
 .status-dot.paused {
     @apply bg-yellow-400;
 }
+.status-dot.created {
+    @apply bg-gray-400;
+}
 
 .btn-action {
     @apply px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-150;

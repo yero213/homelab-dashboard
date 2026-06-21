@@ -194,7 +194,7 @@ function renderRAMCard(hw) {
 }
 
 function renderContainerRow(c) {
-    const statusClass = c.status === "running" ? "running" : c.status === "stopped" ? "stopped" : "paused";
+    const statusClass = c.status === "running" ? "running" : c.status === "stopped" ? "stopped" : c.status === "created" ? "created" : "paused";
     const showActions = c.status === "running" || c.status === "stopped";
 
     return `
@@ -211,6 +211,7 @@ function renderContainerRow(c) {
                 <span class="text-xs px-2 py-0.5 rounded-full font-medium
                     ${c.status === 'running' ? 'bg-green-900 text-green-200' : 
                       c.status === 'stopped' ? 'bg-red-900 text-red-200' : 
+                      c.status === 'created' ? 'bg-gray-700 text-gray-300' :
                       'bg-yellow-900 text-yellow-200'}">
                     ${c.status}
                 </span>

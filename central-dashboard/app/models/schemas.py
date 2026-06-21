@@ -20,6 +20,10 @@ class ContainerStatus(str, Enum):
     RUNNING = "running"
     STOPPED = "stopped"
     PAUSED = "paused"
+    CREATED = "created"
+    RESTARTING = "restarting"
+    REMOVING = "removing"
+    DEAD = "dead"
     UNKNOWN = "unknown"
 
 

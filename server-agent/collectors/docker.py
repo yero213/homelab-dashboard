@@ -13,6 +13,18 @@ from docker.errors import DockerException
 
 logger = logging.getLogger(__name__)
 
+# Docker-status → frontend-status mapping
+STATUS_MAP = {
+    "running": "running",
+    "exited": "stopped",
+    "stopped": "stopped",
+    "paused": "paused",
+    "created": "created",
+    "restarting": "restarting",
+    "removing": "removing",
+    "dead": "dead",
+}
+
 
 def _get_client() -> Optional[docker.DockerClient]:
     """Maak een Docker-client aan. Geeft None als Docker niet beschikbaar is."""
@@ -32,12 +44,13 @@ def list_containers() -> List[Dict[str, Any]]:
     containers = []
     try:
         for c in client.containers.list(all=True):
+            docker_status = c.status
             containers.append(
                 {
                     "id": c.short_id,
                     "name": c.name,
                     "image": c.image.tags[0] if c.image.tags else "unknown",
-                    "status": c.status,
+                    "status": STATUS_MAP.get(docker_status, "unknown"),
                     "uptime": c.attrs.get("State", {}).get("StartedAt", ""),
                     "ports": _format_ports(c.attrs.get("NetworkSettings", {}).get("Ports", {})),
                 }
