@@ -1,0 +1,59 @@
+/* Aanvullende stijlen bovenop TailwindCSS */
+
+.server-tab {
+    @apply px-5 py-3 text-sm font-medium rounded-t-lg transition-colors duration-200;
+}
+.server-tab.active {
+    @apply bg-indigo-600 text-white;
+}
+.server-tab:not(.active) {
+    @apply bg-gray-700 text-gray-300 hover:bg-gray-600;
+}
+
+.metric-card {
+    @apply bg-gray-800 rounded-xl p-5 border border-gray-700;
+}
+
+.progress-bar {
+    @apply h-2.5 rounded-full bg-gray-600 overflow-hidden;
+}
+.progress-bar-fill {
+    @apply h-full rounded-full transition-all duration-500;
+}
+
+.container-row {
+    @apply flex items-center justify-between px-4 py-3 bg-gray-750 rounded-lg border border-gray-700;
+}
+.container-row:hover {
+    @apply border-indigo-500/50;
+}
+
+.status-dot {
+    @apply w-2.5 h-2.5 rounded-full inline-block mr-2;
+}
+.status-dot.running {
+    @apply bg-green-400;
+}
+.status-dot.stopped {
+    @apply bg-red-400;
+}
+.status-dot.paused {
+    @apply bg-yellow-400;
+}
+
+.btn-action {
+    @apply px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-150;
+}
+.btn-start {
+    @apply bg-green-600 hover:bg-green-500 text-white;
+}
+.btn-stop {
+    @apply bg-red-600 hover:bg-red-500 text-white;
+}
+.btn-restart {
+    @apply bg-yellow-600 hover:bg-yellow-500 text-white;
+}
+
+.loading-spinner {
+    @apply inline-block w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin;
+}

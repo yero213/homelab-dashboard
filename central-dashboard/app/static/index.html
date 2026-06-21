@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="nl" class="bg-gray-900 text-gray-100">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Homelab Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="min-h-screen flex flex-col">
+    <!-- Top Navigation -->
+    <header class="bg-gray-800 border-b border-gray-700 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <svg class="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
+                </svg>
+                <h1 class="text-xl font-bold text-white">Homelab Dashboard</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <span id="loading-spinner" class="loading-spinner" style="display:none;"></span>
+                <span class="text-sm text-gray-400">Auto-refresh elke 10s</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl mx-auto w-full px-6 py-6">
+        <!-- Server Tabs -->
+        <div class="flex gap-1 mb-6">
+            <button class="server-tab active" data-server="umbrelos">
+                <span class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+                    UmbrelOS
+                </span>
+            </button>
+            <button class="server-tab" data-server="ubuntu">
+                <span class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-orange-400"></span>
+                    Ubuntu Server
+                </span>
+            </button>
+        </div>
+
+        <!-- Server Content -->
+        <div id="server-content">
+            <div class="flex items-center justify-center h-64">
+                <div class="loading-spinner" style="width:2rem;height:2rem;border-width:3px;"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 border-t border-gray-700 px-6 py-3 text-center text-xs text-gray-500">
+        Homelab Dashboard v0.1.0 &mdash; Built with FastAPI &amp; TailwindCSS
+    </footer>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>
