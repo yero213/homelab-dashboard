@@ -17,8 +17,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Maak een niet-root user (moet wel in docker group zitten voor socket toegang)
-RUN groupadd -r -g 1000 appuser && \
-    groupadd -r -g 999 docker && \
+RUN groupadd -r -g 999 docker 2>/dev/null || true; \
+    groupadd -r -g 1000 appuser && \
     useradd -r -u 1000 -g appuser -G docker -d /app -s /sbin/nologin appuser
 
 WORKDIR /app
