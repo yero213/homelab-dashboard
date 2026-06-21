@@ -25,19 +25,20 @@ def collect_hardware() -> dict:
 
 def collect_storage() -> list:
     """Geeft schijfruimte van alle fysieke schijven."""
+    pseudo_fs = {
+        "proc", "sysfs", "devtmpfs", "tmpfs", "devpts",
+        "fusectl", "cgroup", "cgroup2", "pstore",
+        "securityfs", "selinuxfs", "autofs", "mqueue",
+        "hugetlbfs", "configfs", "debugfs", "tracefs",
+        "ramfs",
+    }
     storages = []
     for part in psutil.disk_partitions():
-        # Sla pseudo/virtuele bestandssystemen over
-        if part.fstype in (
-            "proc", "sysfs", "devtmpfs", "tmpfs", "devpts",
-            "fusectl", "cgroup", "cgroup2", "pstore",
-            "securityfs", "selinuxfs", "autofs", "mqueue",
-            "hugetlbfs", "configfs", "debugfs", "tracefs",
-            "ramfs", "overlay", "overlay2",
-        ):
-            continue
-        # Sla loop-apparaten over
+        # Sla loop-apparaten over (snap-packages, enz.)
         if part.device and "loop" in part.device:
+            continue
+        # Sla pseudo-FS over, behalve root (/) die in Docker overlay kan zijn
+        if part.fstype in pseudo_fs and part.mountpoint != "/":
             continue
         try:
             usage = psutil.disk_usage(part.mountpoint)
