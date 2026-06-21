@@ -117,6 +117,12 @@ async def docker_action(
     return result
 
 
+@app.get("/health")
+async def get_health():
+    """Onauthenticeerde healthcheck voor Docker."""
+    return {"status": "ok"}
+
+
 # ─── Startup ─────────────────────────────────────────────────────────
 
 if __name__ == "__main__":

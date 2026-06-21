@@ -11,7 +11,7 @@ services:
       - DASHBOARD_HOST=0.0.0.0
       - DASHBOARD_PORT=8000
       - AGENT_UMBRELOS_URL=http://agent-umbrelos:9100
-      - AGENT_UBUNTU_URL=http://agent-ubuntu:9101
+      - AGENT_UBUNTU_URL=http://agent-ubuntu:9100  # interne poort 9100, niet de host-poort
       - DASHBOARD_API_KEY=dashboard-dev-key
     depends_on:
       - agent-umbrelos
