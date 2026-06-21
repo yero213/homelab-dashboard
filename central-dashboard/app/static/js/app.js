@@ -115,7 +115,7 @@ function renderServerData(data) {
 
         <!-- Metrics Grid -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            ${renderStorageCard(storage)}
+            ${renderStorageCards(storage)}
             ${renderCPUCard(hardware)}
             ${renderRAMCard(hardware)}
         </div>
@@ -151,18 +151,32 @@ function renderServerData(data) {
     });
 }
 
-function renderStorageCard(storage) {
-    const pct = storage.used_percent;
-    const color = pct > 90 ? "bg-red-500" : pct > 70 ? "bg-yellow-500" : "bg-green-500";
-    return `
+function renderStorageCards(storages) {
+    if (!storages || storages.length === 0) {
+        return `
+            <div class="metric-card">
+                <h4 class="text-sm font-medium text-gray-400 mb-1">Opslag</h4>
+                <p class="text-sm text-gray-500">Geen schijfdata beschikbaar</p>
+            </div>`;
+    }
+    return storages.map(s => {
+        const pct = s.used_percent;
+        const color = pct > 90 ? "bg-red-500" : pct > 70 ? "bg-yellow-500" : "bg-green-500";
+        const label = s.mount_point === "/" ? "Systeemschijf" : s.mount_point.split("/").pop();
+        return `
         <div class="metric-card">
-            <h4 class="text-sm font-medium text-gray-400 mb-1">Opslag</h4>
-            <p class="text-2xl font-bold text-white mb-1">${storage.used_gb}GB <span class="text-sm font-normal text-gray-400">/ ${storage.total_gb}GB</span></p>
+            <h4 class="text-sm font-medium text-gray-400 mb-1">
+                ${s.mount_point}
+                <span class="text-xs text-gray-500 ml-1">(${s.device || s.fstype || ''})</span>
+            </h4>
+            <p class="text-2xl font-bold text-white mb-1">${s.used_gb}GB <span class="text-sm font-normal text-gray-400">/ ${s.total_gb}GB</span></p>
             <div class="progress-bar mt-2">
                 <div class="progress-bar-fill ${color}" style="width:${pct}%"></div>
             </div>
-            <p class="text-xs text-gray-400 mt-1">${storage.available_gb}GB vrij — ${pct}% gebruikt</p>
+            <p class="text-xs text-gray-400 mt-1">${s.available_gb}GB vrij — ${pct}% gebruikt</p>
         </div>`;
+    }).join('');
+}
 }
 
 function renderCPUCard(hw) {

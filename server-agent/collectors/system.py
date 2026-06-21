@@ -23,13 +23,33 @@ def collect_hardware() -> dict:
     }
 
 
-def collect_storage() -> dict:
-    """Geeft schijfruimte van de root-partitie."""
-    usage = psutil.disk_usage("/")
-    return {
-        "total_gb": round(usage.total / (1024**3), 2),
-        "used_gb": round(usage.used / (1024**3), 2),
-        "available_gb": round(usage.free / (1024**3), 2),
-        "used_percent": usage.percent,
-        "mount_point": "/",
-    }
+def collect_storage() -> list:
+    """Geeft schijfruimte van alle fysieke schijven."""
+    storages = []
+    for part in psutil.disk_partitions():
+        # Sla pseudo/virtuele bestandssystemen over
+        if part.fstype in (
+            "proc", "sysfs", "devtmpfs", "tmpfs", "devpts",
+            "fusectl", "cgroup", "cgroup2", "pstore",
+            "securityfs", "selinuxfs", "autofs", "mqueue",
+            "hugetlbfs", "configfs", "debugfs", "tracefs",
+            "ramfs", "overlay", "overlay2",
+        ):
+            continue
+        # Sla loop-apparaten over
+        if part.device and "loop" in part.device:
+            continue
+        try:
+            usage = psutil.disk_usage(part.mountpoint)
+            storages.append({
+                "total_gb": round(usage.total / (1024**3), 2),
+                "used_gb": round(usage.used / (1024**3), 2),
+                "available_gb": round(usage.free / (1024**3), 2),
+                "used_percent": usage.percent,
+                "mount_point": part.mountpoint,
+                "device": part.device or "",
+                "fstype": part.fstype,
+            })
+        except PermissionError:
+            continue
+    return storages

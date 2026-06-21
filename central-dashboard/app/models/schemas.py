@@ -41,6 +41,8 @@ class StorageInfo(BaseModel):
     available_gb: float
     used_percent: float
     mount_point: str
+    device: Optional[str] = None
+    fstype: Optional[str] = None
 
 
 class HardwareMetrics(BaseModel):
@@ -62,7 +64,7 @@ class DockerContainer(BaseModel):
 
 class ServerOverview(BaseModel):
     os: OSInfo
-    storage: StorageInfo
+    storage: List[StorageInfo]
     hardware: HardwareMetrics
     docker_containers: List[DockerContainer]
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends
 
@@ -64,7 +64,7 @@ async def get_server_os(
 async def get_server_storage(
     server_id: str,
     _: str = Depends(verify_api_key),
-) -> Dict[str, Any]:
+) -> Any:
     """Opslag-info van een server."""
     agent = _get_agent(server_id)
     return await agent.get_storage()
