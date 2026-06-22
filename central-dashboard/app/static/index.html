@@ -1,77 +1,77 @@
 <!DOCTYPE html>
-<html lang="nl" class="bg-gray-900 text-gray-100">
+<html lang="nl">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Homelab Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="/css/style.css?v=2" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/style.css?v=3" />
 </head>
-<body class="min-h-screen flex flex-col">
+<body>
     <!-- Top Navigation -->
-    <header class="dashboard-header px-6 py-5">
-        <div class="max-w-7xl mx-auto flex items-center justify-between">
-            <div class="flex items-center gap-4">
-                <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <header class="dashboard-header">
+        <div class="header-inner">
+            <div class="header-brand">
+                <div class="header-logo">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
                     </svg>
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold text-white">Homelab Dashboard</h1>
-                    <p class="text-xs text-gray-500">v0.1.0 — Real-time server monitoring</p>
+                    <h1 class="header-title">Homelab Dashboard</h1>
+                    <p class="header-subtitle">v0.3.0 &mdash; Real-time monitoring</p>
                 </div>
             </div>
-            <div class="flex items-center gap-4">
-                <span id="loading-spinner" class="loading-spinner" style="display:none;"></span>
-                <div class="flex items-center gap-2 text-sm text-gray-400 bg-gray-800/50 px-3 py-2 rounded-full border border-gray-700/50">
-                    <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                    Auto-refresh
-                </div>
+            <div class="header-status">
+                <span class="header-status-dot"></span>
+                <span>Auto-refresh 10s</span>
             </div>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="flex-1 max-w-7xl mx-auto w-full px-6 py-6">
+    <main class="main-content">
         <!-- Server Tabs -->
         <div class="touch-nav">
             <button class="server-tab active" data-server="umbrelos">
-                <span class="flex items-center gap-2.5">
-                    <span class="w-3 h-3 rounded-full bg-purple-400 shadow-sm shadow-purple-400/50"></span>
-                    UmbrelOS
-                </span>
+                <span class="tab-dot umbrelos"></span>
+                UmbrelOS
             </button>
             <button class="server-tab" data-server="ubuntu">
-                <span class="flex items-center gap-2.5">
-                    <span class="w-3 h-3 rounded-full bg-orange-400 shadow-sm shadow-orange-400/50"></span>
-                    Ubuntu Server
-                </span>
+                <span class="tab-dot ubuntu"></span>
+                Ubuntu Server
             </button>
             <button class="server-tab" data-view="storage">
-                <span class="flex items-center gap-2.5">
-                    <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/>
-                    </svg>
-                    Storage
-                </span>
+                <svg class="tab-icon" style="color:#22d3ee;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/>
+                </svg>
+                Storage
             </button>
         </div>
 
         <!-- Server Content -->
         <div id="server-content">
-            <div class="flex items-center justify-center h-64">
-                <div class="loading-spinner" style="width:2rem;height:2rem;border-width:3px;"></div>
+            <div style="display:flex;align-items:center;justify-content:center;height:256px;">
+                <div class="loading-spinner"></div>
             </div>
         </div>
     </main>
 
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container"></div>
+
     <!-- Footer -->
-    <footer class="border-t border-gray-800 px-6 py-4 text-center text-xs text-gray-600">
-        <p>Homelab Dashboard v0.1.0 &mdash; FastAPI &amp; TailwindCSS &mdash; Touch-optimized</p>
+    <footer class="dashboard-footer">
+        <p>Homelab Dashboard v0.3.0 &mdash; Built with FastAPI &amp; Touch-First Design</p>
     </footer>
 
-    <script src="/js/app.js?v=3"></script>
+    <script src="/js/app.js?v=5"></script>
 </body>
 </html>
