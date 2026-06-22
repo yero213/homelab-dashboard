@@ -5,6 +5,7 @@ Gebruikt psutil voor cross-platform compatibiliteit.
 
 from __future__ import annotations
 
+import os
 import psutil
 
 
@@ -39,6 +40,12 @@ def collect_storage() -> list:
             continue
         # Sla pseudo-FS over, behalve root (/) die in Docker overlay kan zijn
         if part.fstype in pseudo_fs and part.mountpoint != "/":
+            continue
+        # Sla Docker-config-bestanden over (bind mounts voor /etc/resolv.conf e.d.)
+        if part.mountpoint in ("/etc/resolv.conf", "/etc/hostname", "/etc/hosts"):
+            continue
+        # Sla mount points over die geen directory zijn (Docker file bind-mounts)
+        if os.path.isfile(part.mountpoint):
             continue
         try:
             usage = psutil.disk_usage(part.mountpoint)

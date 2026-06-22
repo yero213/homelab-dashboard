@@ -11,9 +11,17 @@ import psutil
 from . import OSType
 
 
+def _get_host_hostname() -> str:
+    """Lees de hostname van de host uit (werkt ook in Docker)."""
+    hostname_path = Path("/host/proc/sys/kernel/hostname")
+    if hostname_path.exists():
+        return hostname_path.read_text().strip()
+    return platform.node()
+
+
 def collect() -> dict:
     """Geeft hostname, os_type, kernel_version en uptime terug."""
-    hostname = platform.node()
+    hostname = _get_host_hostname()
     os_type = _detect_os_type()
     kernel = platform.release()
     uptime = _get_uptime()
@@ -27,22 +35,23 @@ def collect() -> dict:
 
 
 def _detect_os_type() -> OSType:
-    """Detecteer het OS-type (UmbrelOS, Ubuntu, Windows, ...)."""
-    # Eerst platform.check
+    """Detecteer het OS-type op basis van de host (via gemounte paden)."""
     system = platform.system()
     if system == "Windows":
         return OSType.WINDOWS
 
-    # Linux-specifieke detectie
-    # UmbrelOS heeft typisch een /umbrel-root of /umbrel map
+    # Controleer of dit een UmbrelOS-host is (via gemounte /host/etc of /umbrel)
     if Path("/umbrel").exists() or Path("/umbrel-root").exists():
         return OSType.UMBRELOS
-    # Check /etc/os-release voor Ubuntu
-    os_release = Path("/etc/os-release")
-    if os_release.exists():
-        content = os_release.read_text()
-        if "Ubuntu" in content:
-            return OSType.UBUNTU
+
+    # Lees /etc/os-release van de host (via gemounte /host/etc)
+    for os_release_path in [Path("/host/etc/os-release"), Path("/etc/os-release")]:
+        if os_release_path.exists():
+            content = os_release_path.read_text().lower()
+            if "ubuntu" in content:
+                return OSType.UBUNTU
+            break
+
     return OSType.UNKNOWN
 
 
