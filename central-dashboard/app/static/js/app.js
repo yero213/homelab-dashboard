@@ -177,7 +177,6 @@ function renderStorageCards(storages) {
         </div>`;
     }).join('');
 }
-}
 
 function renderCPUCard(hw) {
     const pct = hw.cpu_percent;
