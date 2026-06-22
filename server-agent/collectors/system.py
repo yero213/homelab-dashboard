@@ -76,6 +76,7 @@ def _read_host_mounts() -> list[dict]:
         "securityfs", "selinuxfs", "autofs", "mqueue",
         "hugetlbfs", "configfs", "debugfs", "tracefs",
         "ramfs", "nsfs", "fuse.gvfsd-fuse",
+        "overlay", "squashfs", "overlay-rootfs",
     }
     # Remote filesystem types die we overslaan
     remote_fs = {"nfs", "nfs4", "cifs", "smb3", "fuse.sshfs", "fuse.glusterfs"}
