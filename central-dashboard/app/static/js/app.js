@@ -68,30 +68,30 @@ function initTabs() {
             btn.classList.add("active");
             if (btn.dataset.view === "storage") {
                 currentTab = "storage";
-                loadAllStorageData();
+                loadAllStorageData(true);
             } else {
                 currentTab = btn.dataset.server;
-                loadServerData(currentTab);
+                loadServerData(currentTab, true);
             }
         });
     });
 }
 
 // ─── Data laden ─────────────────────────────────────────────────────
-async function loadServerData(serverId) {
-    showLoading(true);
+async function loadServerData(serverId, showLoader = true) {
+    if (showLoader) showLoading(true);
     try {
         const data = await apiFetch(`/servers/${serverId}/overview`);
         renderServerData(data);
     } catch (err) {
         showError(err.message);
     } finally {
-        showLoading(false);
+        if (showLoader) showLoading(false);
     }
 }
 
-async function loadAllStorageData() {
-    showLoading(true);
+async function loadAllStorageData(showLoader = true) {
+    if (showLoader) showLoading(true);
     try {
         const [umbrelos, ubuntu] = await Promise.all([
             apiFetch("/servers/umbrelos/overview"),
@@ -101,7 +101,15 @@ async function loadAllStorageData() {
     } catch (err) {
         showError(err.message);
     } finally {
-        showLoading(false);
+        if (showLoader) showLoading(false);
+    }
+}
+
+function reloadCurrentTab() {
+    if (currentTab === "storage") {
+        loadAllStorageData(true);
+    } else {
+        loadServerData(currentTab, true);
     }
 }
 
@@ -159,7 +167,7 @@ function showError(msg) {
             </svg>
             <h3 class="error-title">Fout bij ophalen data</h3>
             <p class="error-message">${msg}</p>
-            <button onclick="location.reload()" class="btn btn-secondary">
+            <button onclick="reloadCurrentTab()" class="btn btn-secondary">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
@@ -425,11 +433,11 @@ function startPolling() {
     stopPolling();
     pollingInterval = setInterval(() => {
         if (currentTab === "storage") {
-            loadAllStorageData();
+            loadAllStorageData(false);
         } else {
-            loadServerData(currentTab);
+            loadServerData(currentTab, false);
         }
-    }, 10000); // elke 10 seconden
+    }, 30000); // elke 30 seconden — stille refresh zonder laad-skeleton
 }
 
 function stopPolling() {
@@ -442,6 +450,6 @@ function stopPolling() {
 // ─── Init ───────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
     initTabs();
-    loadServerData(currentTab);
+    loadServerData(currentTab, true);
     startPolling();
 });

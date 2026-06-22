@@ -45,8 +45,31 @@ def _is_docker_with_host() -> bool:
     return Path("/host").is_dir() and Path("/host/proc/mounts").exists()
 
 
+def _is_physical_device(device: str) -> bool:
+    """Check of een device een fysieke schijf is (geen remote/loop/virtueel)."""
+    return (
+        device.startswith("/dev/sd")
+        or device.startswith("/dev/nvme")
+        or device.startswith("/dev/vd")
+        or device.startswith("/dev/mmcblk")
+    )
+
+
+def _mount_depth(mountpoint: str) -> int:
+    """Hoe diep is een mountpoint? / is diepte 0, /data is diepte 1, /data/sub is diepte 2."""
+    if mountpoint == "/":
+        return 0
+    return mountpoint.count("/")
+
+
 def _read_host_mounts() -> list[dict]:
-    """Lees host-schijfmounts van /host/proc/mounts (wanneer beschikbaar)."""
+    """Lees host-schijfmounts van /host/proc/mounts (wanneer beschikbaar).
+
+    Dedupliceert per device: als één fysieke schijf meerdere mountpoints heeft
+    (bv. /data, /home, /var/lib/docker allemaal op /dev/sda6), dan tonen we
+    enkel de **ondiepste** mount (de root-mount van die partitie).
+    Remote mounts (NFS, CIFS, SSHFS) worden overgeslagen.
+    """
     pseudo_fs = {
         "proc", "sysfs", "devtmpfs", "tmpfs", "devpts",
         "fusectl", "cgroup", "cgroup2", "pstore",
@@ -54,10 +77,12 @@ def _read_host_mounts() -> list[dict]:
         "hugetlbfs", "configfs", "debugfs", "tracefs",
         "ramfs", "nsfs", "fuse.gvfsd-fuse",
     }
-    # Devices die we overslaan (niet-fysieke schijven)
+    # Remote filesystem types die we overslaan
+    remote_fs = {"nfs", "nfs4", "cifs", "smb3", "fuse.sshfs", "fuse.glusterfs"}
+
     skip_devices = {"none", "tmpfs", "devtmpfs"}
 
-    mounts = []
+    raw_mounts = []
     try:
         content = Path("/host/proc/mounts").read_text()
         for line in content.strip().splitlines():
@@ -69,18 +94,20 @@ def _read_host_mounts() -> list[dict]:
             # Sla pseudo-filesystems over
             if fstype in pseudo_fs:
                 continue
+            # Sla remote filesystems over (NFS, CIFS, …)
+            if fstype in remote_fs:
+                continue
             # Sla niet-apparaten over
             if device in skip_devices:
+                continue
+            # Sla loop-devices over (snap packages, enz.)
+            if device.startswith("/dev/loop"):
                 continue
             # Sla /boot/efi en vergelijkbare kleine mounts over
             if mountpoint in ("/boot/efi", "/boot/EFI", "/efi"):
                 continue
-            # Alleen partitions die eruit zien als fysieke schijven
-            # (/dev/sd*, /dev/nvme*, /dev/mapper/*, /dev/vd*)
-            if not (device.startswith("/dev/sd")
-                    or device.startswith("/dev/nvme")
-                    or device.startswith("/dev/mapper")
-                    or device.startswith("/dev/vd")):
+            # Alleen fysieke schijven
+            if not _is_physical_device(device):
                 continue
 
             # Controleer of het mountpoint bestaat op de host
@@ -90,7 +117,7 @@ def _read_host_mounts() -> list[dict]:
 
             try:
                 usage = psutil.disk_usage(str(host_path))
-                mounts.append({
+                raw_mounts.append({
                     "total_gb": round(usage.total / (1024**3), 2),
                     "used_gb": round(usage.used / (1024**3), 2),
                     "available_gb": round(usage.free / (1024**3), 2),
@@ -98,6 +125,7 @@ def _read_host_mounts() -> list[dict]:
                     "mount_point": mountpoint,
                     "device": device,
                     "fstype": fstype,
+                    "_depth": _mount_depth(mountpoint),
                 })
             except (PermissionError, OSError) as e:
                 logger.debug("Kan schijfgegevens niet lezen voor %s: %s", mountpoint, e)
@@ -105,7 +133,22 @@ def _read_host_mounts() -> list[dict]:
     except (FileNotFoundError, PermissionError) as e:
         logger.warning("Kan /host/proc/mounts niet lezen: %s", e)
 
-    return mounts
+    # ─── Dedupliceer per device ─────────────────────────────────────
+    # Houd voor elk uniek device enkel de ondiepste mount over
+    best_per_device: dict[str, dict] = {}
+    for m in raw_mounts:
+        dev = m["device"]
+        if dev not in best_per_device or m["_depth"] < best_per_device[dev]["_depth"]:
+            best_per_device[dev] = m
+
+    # Sorteer op mount_point voor een mooie volgorde
+    result = sorted(best_per_device.values(), key=lambda x: x["mount_point"])
+
+    # Verwijder interne _depth veld
+    for m in result:
+        del m["_depth"]
+
+    return result
 
 
 def _collect_storage_native() -> list:
