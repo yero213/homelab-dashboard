@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import platform
 import time
 from pathlib import Path
@@ -10,13 +11,42 @@ import psutil
 
 from . import OSType
 
+logger = logging.getLogger(__name__)
+
 
 def _get_host_hostname() -> str:
-    """Lees de hostname van de host uit (werkt ook in Docker)."""
-    hostname_path = Path("/host/proc/sys/kernel/hostname")
-    if hostname_path.exists():
-        return hostname_path.read_text().strip()
-    return platform.node()
+    """Lees de hostname van de host uit (werkt ook in Docker).
+
+    Probeer volgende methodes in volgorde:
+    1. /host/proc/sys/kernel/hostname (host gemount via Docker)
+    2. /host/etc/hostname (host filesystem gemount)
+    3. /etc/hostname (container eigen hostname — beter dan container-ID)
+    4. platform.node() (fallback)
+    """
+    candidates = [
+        Path("/host/proc/sys/kernel/hostname"),
+        Path("/host/etc/hostname"),
+        Path("/etc/hostname"),
+    ]
+    for path in candidates:
+        try:
+            if path.exists():
+                value = path.read_text().strip()
+                if value:
+                    return value
+        except (PermissionError, OSError):
+            continue
+
+    # Fallback — platform.node() geeft in Docker vaak het container-ID
+    node = platform.node()
+    # Als het eruit ziet als een container-ID (lang hex string), noteer een warning
+    if len(node) > 12 and all(c in "0123456789abcdef" for c in node.lower()):
+        logger.warning(
+            "Hostname lijkt op een container-ID (%s). "
+            "Mount /proc van de host naar /host/proc in de container voor de juiste hostnaam.",
+            node,
+        )
+    return node
 
 
 def collect() -> dict:

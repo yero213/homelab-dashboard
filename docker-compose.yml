@@ -11,6 +11,8 @@ services:
       - AGENT_UMBRELOS_URL=http://192.168.1.217:9100
       - AGENT_UBUNTU_URL=http://192.168.1.3:9100
       - DASHBOARD_API_KEY=dashboard-dev-key
+      - AGENT_UMBRELOS_KEY=dev-agent-key
+      - AGENT_UBUNTU_KEY=dev-agent-key
     restart: unless-stopped
     networks:
       - homelab-net
