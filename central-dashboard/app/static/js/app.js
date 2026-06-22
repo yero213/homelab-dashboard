@@ -11,6 +11,8 @@ const API_BASE = "/api";
 
 // ─── State ──────────────────────────────────────────────────────────
 let currentServer = "umbrelos";
+let currentView = "overview";
+let cachedData = null;
 let pollingInterval = null;
 
 // ─── DOM refs ───────────────────────────────────────────────────────
@@ -42,9 +44,25 @@ function initTabs() {
             tabs.forEach((t) => t.classList.remove("active"));
             btn.classList.add("active");
             currentServer = btn.dataset.server;
+            currentView = "overview";
             loadServerData(currentServer);
         });
     });
+}
+
+// ─── View switching ─────────────────────────────────────────────────
+function switchView(view) {
+    currentView = view;
+    renderCurrentView();
+}
+
+function renderCurrentView() {
+    if (!cachedData) return;
+    if (currentView === "overview") {
+        renderServerData(cachedData);
+    } else if (currentView === "storage") {
+        renderStorageView(cachedData);
+    }
 }
 
 // ─── Data laden ─────────────────────────────────────────────────────
@@ -52,7 +70,8 @@ async function loadServerData(serverId) {
     showLoading(true);
     try {
         const data = await apiFetch(`/servers/${serverId}/overview`);
-        renderServerData(data);
+        cachedData = data;
+        renderCurrentView();
     } catch (err) {
         showError(err.message);
     } finally {
@@ -115,7 +134,7 @@ function renderServerData(data) {
 
         <!-- Metrics Grid -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            ${renderStorageCards(storage)}
+            ${renderAggregatedStorage(storage)}
             ${renderCPUCard(hardware)}
             ${renderRAMCard(hardware)}
         </div>
@@ -151,7 +170,7 @@ function renderServerData(data) {
     });
 }
 
-function renderStorageCards(storages) {
+function renderAggregatedStorage(storages) {
     if (!storages || storages.length === 0) {
         return `
             <div class="metric-card">
@@ -159,23 +178,81 @@ function renderStorageCards(storages) {
                 <p class="text-sm text-gray-500">Geen schijfdata beschikbaar</p>
             </div>`;
     }
-    return storages.map(s => {
-        const pct = s.used_percent;
-        const color = pct > 90 ? "bg-red-500" : pct > 70 ? "bg-yellow-500" : "bg-green-500";
-        const label = s.mount_point === "/" ? "Systeemschijf" : s.mount_point.split("/").pop();
-        return `
+    // Alles samenvoegen tot 1 totaal
+    const total = storages.reduce((acc, s) => ({
+        total_gb: acc.total_gb + s.total_gb,
+        used_gb: acc.used_gb + s.used_gb,
+        available_gb: acc.available_gb + s.available_gb,
+    }), { total_gb: 0, used_gb: 0, available_gb: 0 });
+
+    const pct = total.total_gb > 0 ? Math.round((total.used_gb / total.total_gb) * 100) : 0;
+    const color = pct > 90 ? "bg-red-500" : pct > 70 ? "bg-yellow-500" : "bg-green-500";
+    return `
         <div class="metric-card">
-            <h4 class="text-sm font-medium text-gray-400 mb-1">
-                ${s.mount_point}
-                <span class="text-xs text-gray-500 ml-1">(${s.device || s.fstype || ''})</span>
-            </h4>
-            <p class="text-2xl font-bold text-white mb-1">${s.used_gb}GB <span class="text-sm font-normal text-gray-400">/ ${s.total_gb}GB</span></p>
+            <h4 class="text-sm font-medium text-gray-400 mb-1">Opslag (alle schijven)</h4>
+            <p class="text-2xl font-bold text-white mb-1">${total.used_gb.toFixed(1)}GB <span class="text-sm font-normal text-gray-400">/ ${total.total_gb.toFixed(1)}GB</span></p>
             <div class="progress-bar mt-2">
                 <div class="progress-bar-fill ${color}" style="width:${pct}%"></div>
             </div>
-            <p class="text-xs text-gray-400 mt-1">${s.available_gb}GB vrij — ${pct}% gebruikt</p>
+            <p class="text-xs text-gray-400 mt-1">${total.available_gb.toFixed(1)}GB vrij — ${pct}% gebruikt</p>
+            <p class="text-xs text-gray-500 mt-1">${storages.length} schijf(ven) —
+                <button onclick="switchView('storage')" class="text-indigo-400 hover:text-indigo-300 underline">Details</button>
+            </p>
         </div>`;
-    }).join('');
+}
+
+function renderStorageView(data) {
+    const { os, storage } = data;
+    const container = $("#server-content");
+
+    container.innerHTML = `
+        <div class="mb-4">
+            <button onclick="switchView('overview')" class="text-indigo-400 hover:text-indigo-300 text-sm flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                Terug naar overzicht
+            </button>
+        </div>
+
+        <h2 class="text-xl font-bold text-white mb-4">Schijfdetails — ${os.hostname}</h2>
+
+        <div class="space-y-4">
+            ${(!storage || storage.length === 0)
+                ? '<p class="text-gray-400">Geen schijfdata beschikbaar.</p>'
+                : storage.map(renderStorageDetailCard).join('')}
+        </div>
+    `;
+}
+
+function renderStorageDetailCard(s) {
+    const pct = s.used_percent;
+    const color = pct > 90 ? "bg-red-500" : pct > 70 ? "bg-yellow-500" : "bg-green-500";
+
+    return `
+        <div class="bg-gray-800 rounded-xl p-5 border border-gray-700">
+            <div class="flex items-center justify-between mb-3">
+                <div>
+                    <h3 class="text-lg font-semibold text-white">${s.mount_point}</h3>
+                    <p class="text-sm text-gray-400">${s.device || s.fstype || 'Onbekend apparaat'}</p>
+                </div>
+                <span class="text-sm px-3 py-1 rounded-full font-medium
+                    ${pct > 90 ? 'bg-red-900 text-red-200' :
+                      pct > 70 ? 'bg-yellow-900 text-yellow-200' :
+                      'bg-green-900 text-green-200'}">
+                    ${pct}% gebruikt
+                </span>
+            </div>
+            <!-- Hogere voortgangsbalk -->
+            <div class="w-full bg-gray-700 rounded-full h-4 mb-3">
+                <div class="h-4 rounded-full transition-all duration-500 ${color}" style="width:${pct}%"></div>
+            </div>
+            <div class="flex justify-between text-sm text-gray-400">
+                <span>${s.used_gb}GB gebruikt</span>
+                <span>${s.available_gb}GB vrij</span>
+                <span>${s.total_gb}GB totaal</span>
+            </div>
+        </div>`;
 }
 
 function renderCPUCard(hw) {
