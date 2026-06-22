@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   # ─── Central Dashboard ──────────────────────────────────────────
   dashboard:
@@ -11,32 +9,8 @@ services:
       - DASHBOARD_HOST=0.0.0.0
       - DASHBOARD_PORT=8000
       - AGENT_UMBRELOS_URL=http://192.168.1.217:9100
-      - AGENT_UBUNTU_URL=http://agent-ubuntu:9100
+      - AGENT_UBUNTU_URL=http://192.168.1.3:9100
       - DASHBOARD_API_KEY=dashboard-dev-key
-    depends_on:
-      - agent-ubuntu
-    restart: unless-stopped
-    networks:
-      - homelab-net
-
-  # ─── Agent voor Ubuntu Server ───────────────────────────────────
-  # Opmerking: deze service is enkel nodig als de Ubuntu-agent ook
-  # als container draait. In de praktijk draait die rechtstreeks op
-  # de Ubuntu-machine en is deze service niet nodig in docker-compose.
-  # Voor lokale ontwikkeling/homelab houden we hem erbij.
-  agent-ubuntu:
-    image: ghcr.io/yero213/homelab-agent:latest
-    container_name: homelab-agent-ubuntu
-    ports:
-      - "9101:9100"  # interne poort 9100, extern 9101
-    environment:
-      - AGENT_API_KEY=dev-agent-key
-      - AGENT_HOST=0.0.0.0
-      - AGENT_PORT=9100
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /proc:/host/proc:ro
-      - /etc:/host/etc:ro
     restart: unless-stopped
     networks:
       - homelab-net
