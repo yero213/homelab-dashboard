@@ -10,9 +10,7 @@ const API_KEY = "dashboard-dev-key"; // TODO: vervangen door echte auth
 const API_BASE = "/api";
 
 // ─── State ──────────────────────────────────────────────────────────
-let currentServer = "umbrelos";
-let currentView = "overview";
-let cachedData = null;
+let currentTab = "umbrelos";
 let pollingInterval = null;
 
 // ─── DOM refs ───────────────────────────────────────────────────────
@@ -43,26 +41,15 @@ function initTabs() {
         btn.addEventListener("click", () => {
             tabs.forEach((t) => t.classList.remove("active"));
             btn.classList.add("active");
-            currentServer = btn.dataset.server;
-            currentView = "overview";
-            loadServerData(currentServer);
+            if (btn.dataset.view === "storage") {
+                currentTab = "storage";
+                loadAllStorageData();
+            } else {
+                currentTab = btn.dataset.server;
+                loadServerData(currentTab);
+            }
         });
     });
-}
-
-// ─── View switching ─────────────────────────────────────────────────
-function switchView(view) {
-    currentView = view;
-    renderCurrentView();
-}
-
-function renderCurrentView() {
-    if (!cachedData) return;
-    if (currentView === "overview") {
-        renderServerData(cachedData);
-    } else if (currentView === "storage") {
-        renderStorageView(cachedData);
-    }
 }
 
 // ─── Data laden ─────────────────────────────────────────────────────
@@ -70,8 +57,22 @@ async function loadServerData(serverId) {
     showLoading(true);
     try {
         const data = await apiFetch(`/servers/${serverId}/overview`);
-        cachedData = data;
-        renderCurrentView();
+        renderServerData(data);
+    } catch (err) {
+        showError(err.message);
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function loadAllStorageData() {
+    showLoading(true);
+    try {
+        const [umbrelos, ubuntu] = await Promise.all([
+            apiFetch("/servers/umbrelos/overview"),
+            apiFetch("/servers/ubuntu/overview"),
+        ]);
+        renderGlobalStorageView({ umbrelos, ubuntu });
     } catch (err) {
         showError(err.message);
     } finally {
@@ -95,7 +96,7 @@ function showError(msg) {
                 </svg>
                 <p class="text-lg font-medium">Fout bij ophalen data</p>
                 <p class="text-sm text-gray-400 mt-1">${msg}</p>
-                <button onclick="loadServerData('${currentServer}')"
+                <button onclick="location.reload()"
                     class="mt-4 px-4 py-2 bg-indigo-600 rounded-lg hover:bg-indigo-500 transition-colors">
                     Probeer opnieuw
                 </button>
@@ -195,33 +196,36 @@ function renderAggregatedStorage(storages) {
                 <div class="progress-bar-fill ${color}" style="width:${pct}%"></div>
             </div>
             <p class="text-xs text-gray-400 mt-1">${total.available_gb.toFixed(1)}GB vrij — ${pct}% gebruikt</p>
-            <p class="text-xs text-gray-500 mt-1">${storages.length} schijf(ven) —
-                <button onclick="switchView('storage')" class="text-indigo-400 hover:text-indigo-300 underline">Details</button>
-            </p>
+            <p class="text-xs text-gray-500 mt-1">${storages.length} schijf(ven)</p>
         </div>`;
 }
 
-function renderStorageView(data) {
-    const { os, storage } = data;
+function renderGlobalStorageView(allData) {
     const container = $("#server-content");
 
+    let sections = '';
+    for (const [serverId, data] of Object.entries(allData)) {
+        const { os, storage } = data;
+        const label = os.os_type === 'umbrelos' ? 'UmbrelOS' : 'Ubuntu Server';
+        const dotColor = os.os_type === 'umbrelos' ? 'purple' : 'orange';
+
+        sections += `
+            <div class="mb-8">
+                <h3 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-${dotColor}-400"></span>
+                    ${label} — ${os.hostname}
+                </h3>
+                <div class="space-y-4">
+                    ${(!storage || storage.length === 0)
+                        ? '<p class="text-gray-400 text-sm">Geen schijfdata beschikbaar.</p>'
+                        : storage.map(renderStorageDetailCard).join('')}
+                </div>
+            </div>`;
+    }
+
     container.innerHTML = `
-        <div class="mb-4">
-            <button onclick="switchView('overview')" class="text-indigo-400 hover:text-indigo-300 text-sm flex items-center gap-1">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                </svg>
-                Terug naar overzicht
-            </button>
-        </div>
-
-        <h2 class="text-xl font-bold text-white mb-4">Schijfdetails — ${os.hostname}</h2>
-
-        <div class="space-y-4">
-            ${(!storage || storage.length === 0)
-                ? '<p class="text-gray-400">Geen schijfdata beschikbaar.</p>'
-                : storage.map(renderStorageDetailCard).join('')}
-        </div>
+        <h2 class="text-2xl font-bold text-white mb-6">Opslagoverzicht — Alle servers</h2>
+        ${sections}
     `;
 }
 
@@ -316,12 +320,17 @@ function renderContainerRow(c) {
 
 // ─── Docker acties ──────────────────────────────────────────────────
 async function performContainerAction(containerId, action) {
+    const serverId = currentTab === "storage" ? "umbrelos" : currentTab;
     try {
-        await apiFetch(`/servers/${currentServer}/docker/${containerId}/${action}`, {
+        await apiFetch(`/servers/${serverId}/docker/${containerId}/${action}`, {
             method: "POST",
         });
         // Herlaad data na actie
-        await loadServerData(currentServer);
+        if (currentTab === "storage") {
+            loadAllStorageData();
+        } else {
+            loadServerData(currentTab);
+        }
     } catch (err) {
         showError(err.message);
     }
@@ -331,7 +340,11 @@ async function performContainerAction(containerId, action) {
 function startPolling() {
     stopPolling();
     pollingInterval = setInterval(() => {
-        loadServerData(currentServer);
+        if (currentTab === "storage") {
+            loadAllStorageData();
+        } else {
+            loadServerData(currentTab);
+        }
     }, 10000); // elke 10 seconden
 }
 
@@ -345,6 +358,6 @@ function stopPolling() {
 // ─── Init ───────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
     initTabs();
-    loadServerData(currentServer);
+    loadServerData(currentTab);
     startPolling();
 });
