@@ -1,62 +1,191 @@
-/* Aanvullende stijlen bovenop TailwindCSS */
+/* ═══════════════════════════════════════════════════════════════════
+   Homelab Dashboard — Modern, Touch-Friendly Styles
+   ═══════════════════════════════════════════════════════════════════ */
 
+/* ─── Server Tabs ────────────────────────────────────────────────── */
 .server-tab {
-    @apply px-5 py-3 text-sm font-medium rounded-t-lg transition-colors duration-200;
+    @apply px-6 py-3.5 text-sm font-semibold rounded-xl transition-all duration-200;
+    min-height: 48px;
+    min-width: 48px;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 .server-tab.active {
-    @apply bg-indigo-600 text-white;
+    @apply bg-indigo-600 text-white shadow-lg shadow-indigo-500/25;
 }
 .server-tab:not(.active) {
-    @apply bg-gray-700 text-gray-300 hover:bg-gray-600;
+    @apply bg-gray-800 text-gray-400 border border-gray-700;
+}
+.server-tab:not(.active):hover {
+    @apply bg-gray-700 text-gray-200 border-gray-600;
+}
+.server-tab:active {
+    transform: scale(0.97);
 }
 
+/* ─── Cards ──────────────────────────────────────────────────────── */
 .metric-card {
-    @apply bg-gray-800 rounded-xl p-5 border border-gray-700;
+    @apply bg-gray-800/80 rounded-2xl p-6 border border-gray-700/50 shadow-xl shadow-black/10;
+    backdrop-filter: blur(12px);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.3);
 }
 
+.card {
+    @apply bg-gray-800/80 rounded-2xl p-6 border border-gray-700/50 shadow-xl shadow-black/10;
+    backdrop-filter: blur(12px);
+}
+
+/* ─── Progress Bars ──────────────────────────────────────────────── */
 .progress-bar {
-    @apply h-2.5 rounded-full bg-gray-600 overflow-hidden;
+    @apply h-3 rounded-full bg-gray-700/80 overflow-hidden;
 }
 .progress-bar-fill {
-    @apply h-full rounded-full transition-all duration-500;
+    @apply h-full rounded-full transition-all duration-700 ease-out;
 }
 
+.progress-bar-lg {
+    @apply h-4 rounded-full bg-gray-700/80 overflow-hidden;
+}
+.progress-bar-lg .progress-bar-fill {
+    @apply h-full rounded-full transition-all duration-700 ease-out;
+}
+
+/* ─── Container Rows ─────────────────────────────────────────────── */
 .container-row {
-    @apply flex items-center justify-between px-4 py-3 bg-gray-750 rounded-lg border border-gray-700;
+    @apply flex items-center justify-between px-5 py-4 rounded-xl border border-gray-700/50;
+    @apply bg-gray-800/60;
+    min-height: 60px;
+    transition: border-color 0.2s, background-color 0.2s;
 }
 .container-row:hover {
-    @apply border-indigo-500/50;
+    @apply border-indigo-500/40 bg-gray-800;
 }
 
+/* ─── Status Dots ────────────────────────────────────────────────── */
 .status-dot {
-    @apply w-2.5 h-2.5 rounded-full inline-block mr-2;
+    @apply w-3 h-3 rounded-full inline-block mr-3 flex-shrink-0;
 }
 .status-dot.running {
-    @apply bg-green-400;
+    @apply bg-green-400 shadow-sm shadow-green-400/50;
 }
 .status-dot.stopped {
-    @apply bg-red-400;
+    @apply bg-red-400 shadow-sm shadow-red-400/50;
 }
 .status-dot.paused {
-    @apply bg-yellow-400;
+    @apply bg-yellow-400 shadow-sm shadow-yellow-400/50;
 }
 .status-dot.created {
-    @apply bg-gray-400;
+    @apply bg-gray-500;
 }
 
+/* ─── Action Buttons (Touch-Friendly) ────────────────────────────── */
 .btn-action {
-    @apply px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-150;
+    @apply px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-150;
+    min-height: 44px;
+    min-width: 44px;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
-.btn-start {
-    @apply bg-green-600 hover:bg-green-500 text-white;
-}
-.btn-stop {
-    @apply bg-red-600 hover:bg-red-500 text-white;
-}
-.btn-restart {
-    @apply bg-yellow-600 hover:bg-yellow-500 text-white;
+.btn-action:active {
+    transform: scale(0.95);
 }
 
+.btn-start {
+    @apply bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-600/20;
+}
+.btn-start:active {
+    @apply bg-green-700;
+}
+
+.btn-stop {
+    @apply bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/20;
+}
+.btn-stop:active {
+    @apply bg-red-700;
+}
+
+.btn-restart {
+    @apply bg-amber-500 hover:bg-amber-400 text-white shadow-lg shadow-amber-500/20;
+}
+.btn-restart:active {
+    @apply bg-amber-600;
+}
+
+/* ─── Loading Spinner ────────────────────────────────────────────── */
 .loading-spinner {
-    @apply inline-block w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin;
+    @apply inline-block w-6 h-6 border-3 border-indigo-400 border-t-transparent rounded-full animate-spin;
+}
+
+/* ─── Storage Detail Card ────────────────────────────────────────── */
+.storage-detail-card {
+    @apply bg-gray-800/80 rounded-2xl p-6 border border-gray-700/50 shadow-xl shadow-black/10;
+    backdrop-filter: blur(12px);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.storage-detail-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.25);
+}
+
+/* ─── Header ─────────────────────────────────────────────────────── */
+.dashboard-header {
+    @apply bg-gray-800/90 border-b border-gray-700/50;
+    backdrop-filter: blur(12px);
+}
+
+/* ─── Badge ──────────────────────────────────────────────────────── */
+.badge {
+    @apply text-xs px-3 py-1.5 rounded-full font-semibold;
+}
+.badge-umbrelos {
+    @apply bg-purple-900/80 text-purple-200 border border-purple-700/50;
+}
+.badge-ubuntu {
+    @apply bg-orange-900/80 text-orange-200 border border-orange-700/50;
+}
+.badge-storage {
+    @apply bg-cyan-900/80 text-cyan-200 border border-cyan-700/50;
+}
+
+/* ─── Touch-Friendly Navigation ──────────────────────────────────── */
+.touch-nav {
+    @apply flex gap-2 mb-6 overflow-x-auto pb-2;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.touch-nav::-webkit-scrollbar {
+    display: none;
+}
+
+/* ─── Percentage Badge ───────────────────────────────────────────── */
+.pct-badge {
+    @apply text-sm px-4 py-2 rounded-full font-bold;
+    min-height: 36px;
+}
+.pct-low {
+    @apply bg-green-900/80 text-green-200 border border-green-700/50;
+}
+.pct-mid {
+    @apply bg-amber-900/80 text-amber-200 border border-amber-700/50;
+}
+.pct-high {
+    @apply bg-red-900/80 text-red-200 border border-red-700/50;
+}
+
+/* ─── Section Headers ────────────────────────────────────────────── */
+.section-title {
+    @apply text-lg font-bold text-white flex items-center gap-3;
+}
+
+/* ─── Smooth Page Transitions ────────────────────────────────────── */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.fade-in {
+    animation: fadeIn 0.3s ease-out;
 }
