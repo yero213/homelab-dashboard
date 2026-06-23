@@ -1,77 +1,43 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#0f172a" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>Homelab Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/css/style.css?v=3" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Homelab Dashboard — centraal beheer van servers en containers">
+  <title>Homelab Dashboard</title>
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="/static/css/style.css">
+
+  <!-- Favicon (data-uri zwart vierkant) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%23000'/></svg>">
 </head>
 <body>
-    <!-- Top Navigation -->
-    <header class="dashboard-header">
-        <div class="header-inner">
-            <div class="header-brand">
-                <div class="header-logo">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
-                    </svg>
-                </div>
-                <div>
-                    <h1 class="header-title">Homelab Dashboard</h1>
-                    <p class="header-subtitle">v0.3.0 &mdash; Real-time monitoring</p>
-                </div>
-            </div>
-            <div class="header-status">
-                <span class="header-status-dot"></span>
-                <span>Auto-refresh 10s</span>
-            </div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <h1>Homelab Dashboard</h1>
+      <div class="header-meta">
+        <div class="last-updated">
+          Laatste update: <span id="last-updated">—</span>
         </div>
+        <div class="server-count" id="server-count">laden…</div>
+      </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="main-content">
-        <!-- Server Tabs -->
-        <div class="touch-nav">
-            <button class="server-tab active" data-server="umbrelos">
-                <span class="tab-dot umbrelos"></span>
-                UmbrelOS
-            </button>
-            <button class="server-tab" data-server="ubuntu">
-                <span class="tab-dot ubuntu"></span>
-                Ubuntu Server
-            </button>
-            <button class="server-tab" data-view="storage">
-                <svg class="tab-icon" style="color:#22d3ee;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/>
-                </svg>
-                Storage
-            </button>
-        </div>
+    <!-- Dashboard container — wordt gevuld door JS -->
+    <main id="dashboard-container"></main>
 
-        <!-- Server Content -->
-        <div id="server-content">
-            <div style="display:flex;align-items:center;justify-content:center;height:256px;">
-                <div class="loading-spinner"></div>
-            </div>
-        </div>
-    </main>
+    <!-- Toast notificaties -->
+    <div id="toast-container" class="toast-container"></div>
+  </div>
 
-    <!-- Toast Notifications -->
-    <div class="toast-container" id="toast-container"></div>
+  <!-- Configuratie (dynamisch gegenereerd door backend) -->
+  <script src="/static/js/config.js"></script>
 
-    <!-- Footer -->
-    <footer class="dashboard-footer">
-        <p>Homelab Dashboard v0.3.0 &mdash; Built with FastAPI &amp; Touch-First Design</p>
-    </footer>
+  <!-- Applicatie -->
+  <script src="/static/js/app.js"></script>
 
-    <script src="/js/app.js?v=5"></script>
 </body>
 </html>

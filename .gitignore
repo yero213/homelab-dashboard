@@ -22,6 +22,9 @@ build/
 Thumbs.db
 .DS_Store
 
-# Environment
+# Environment — bevat secrets, NOOIT in git!
 .env
 *.env.local
+
+# Docker
+.docker/

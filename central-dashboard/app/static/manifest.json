@@ -1,0 +1,10 @@
+{
+  "name": "Homelab Dashboard",
+  "short_name": "Homelab",
+  "description": "Centrale Web GUI voor homelab-serverbeheer",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FFFFFF",
+  "icons": []
+}
