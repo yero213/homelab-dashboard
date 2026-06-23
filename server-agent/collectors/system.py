@@ -102,8 +102,10 @@ def _read_host_mounts_cached() -> list[dict]:
     """Lees host-schijfmounts van /host/proc/mounts met caching.
 
     Caching voorkomt herhaalde reads binnen de TTL (5 seconden).
-    Dedupliceert per device: voor elk uniek device wordt enkel de
-    mount met de grootste totale capaciteit behouden.
+    Dedupliceert per (device, total_gb): bind mounts van hetzelfde
+    subvolume worden samengevoegd, BTRFS-subvolumes met verschillende
+    capaciteit blijven behouden. Binnen een groep wint de mount met
+    de hoogste prioriteit (/ > /run/rugix/mounts/system > ...).
 
     Returns:
         lijst van dicts met total_gb, used_gb, available_gb, used_percent,
@@ -169,16 +171,36 @@ def _read_host_mounts_cached() -> list[dict]:
             logger.debug("Kan schijfgegevens niet lezen voor %s: %s", mountpoint, e)
             continue
 
-    # ─── Dedupliceer per device ─────────────────────────────────────
-    # Houd voor elk uniek device de mount met de grootste total_gb
-    best_per_device: dict[str, dict] = {}
+    # ─── Dedupliceer per (device, total_gb) ──────────────────────────
+    # Device + total_gb = uniek filesystem (BTRFS-subvolumes hebben
+    # verschillende total_gb, dus blijven behouden). Bind mounts van
+    # hetzelfde subvolume hebben identieke (device, total_gb) en
+    # worden samengevoegd: de mount met hoogste prioriteit wint.
+    def _mount_priority(mp: str) -> int:
+        """Bepaal prioriteit van een mountpoint (lager = beter)."""
+        if mp == "/":
+            return 0
+        if mp.startswith("/run/rugix/mounts/"):
+            suffix = mp[len("/run/rugix/mounts/"):]
+            order = {"system": 1, "data": 2, "config": 3}
+            return order.get(suffix, 10)
+        return 50 + _mount_depth(mp)
+
+    best_per_key: dict[tuple[str, float], dict] = {}
     for m in raw_mounts:
-        dev = m["device"]
-        if dev not in best_per_device or m["total_gb"] > best_per_device[dev]["total_gb"]:
-            best_per_device[dev] = m
+        key = (m["device"], m["total_gb"])
+        if key not in best_per_key:
+            best_per_key[key] = m
+        else:
+            existing = best_per_key[key]
+            if _mount_priority(m["mount_point"]) < _mount_priority(existing["mount_point"]):
+                best_per_key[key] = m
+            elif _mount_priority(m["mount_point"]) == _mount_priority(existing["mount_point"]):
+                if m["_depth"] < existing["_depth"]:
+                    best_per_key[key] = m
 
     # Sorteer op mount_point
-    result = sorted(best_per_device.values(), key=lambda x: x["mount_point"])
+    result = sorted(best_per_key.values(), key=lambda x: x["mount_point"])
 
     # Verwijder interne velden
     for m in result:
