@@ -98,14 +98,40 @@ def _mount_depth(mountpoint: str) -> int:
     return mountpoint.count("/")
 
 
+def _clean_mountpoint(mp: str) -> str:
+    """Verwijder /host prefix van een mountpoint (Rugix namespace artefact).
+
+    Op UmbrelOS/Rugix worden host-paden in /proc/mounts met /host/
+    voorvoegsel getoond. Dit strippen we voor een cleane weergave.
+    """
+    if mp.startswith("/host/"):
+        return mp[len("/host/"):]
+    if mp == "/host":
+        return "/"
+    return mp
+
+
+def _get_st_dev(path: str) -> int | None:
+    """Verkrijg st_dev (Linux device ID) van een pad.
+
+    st_dev is uniek per mounted filesystem. Bind mounts van hetzelfde
+    filesystem hebben altijd dezelfde st_dev.
+    """
+    try:
+        return os.stat(path).st_dev
+    except OSError:
+        return None
+
+
 def _read_host_mounts_cached() -> list[dict]:
     """Lees host-schijfmounts van /host/proc/mounts met caching.
 
     Caching voorkomt herhaalde reads binnen de TTL (5 seconden).
-    Dedupliceert per (device, total_gb): bind mounts van hetzelfde
-    subvolume worden samengevoegd, BTRFS-subvolumes met verschillende
+    Dedupliceert per (_st_dev, total_gb): bind mounts van hetzelfde
+    filesystem worden samengevoegd, BTRFS-subvolumes met verschillende
     capaciteit blijven behouden. Binnen een groep wint de mount met
     de hoogste prioriteit (/ > /run/rugix/mounts/system > ...).
+    Mount points worden opgeschoond (/_host_ prefix verwijderd).
 
     Returns:
         lijst van dicts met total_gb, used_gb, available_gb, used_percent,
@@ -157,38 +183,44 @@ def _read_host_mounts_cached() -> list[dict]:
 
         try:
             usage = psutil.disk_usage(str(host_path))
+            st_dev = _get_st_dev(str(host_path))
+            if st_dev is None:
+                continue
+            clean_mp = _clean_mountpoint(mountpoint)
             raw_mounts.append({
                 "total_gb": round(usage.total / (1024**3), 2),
                 "used_gb": round(usage.used / (1024**3), 2),
                 "available_gb": round(usage.free / (1024**3), 2),
                 "used_percent": usage.percent,
-                "mount_point": mountpoint,
+                "mount_point": clean_mp,
                 "device": device,
                 "fstype": fstype,
-                "_depth": _mount_depth(mountpoint),
+                "_st_dev": st_dev,
+                "_depth": _mount_depth(clean_mp),
             })
         except (PermissionError, OSError) as e:
             logger.debug("Kan schijfgegevens niet lezen voor %s: %s", mountpoint, e)
             continue
 
-    # ─── Dedupliceer per (device, total_gb) ──────────────────────────
-    # Device + total_gb = uniek filesystem (BTRFS-subvolumes hebben
-    # verschillende total_gb, dus blijven behouden). Bind mounts van
-    # hetzelfde subvolume hebben identieke (device, total_gb) en
-    # worden samengevoegd: de mount met hoogste prioriteit wint.
+    # ─── Dedupliceer per (_st_dev, total_gb) ─────────────────────────
+    # _st_dev (kernel device ID) + total_gb = uniek filesystem.
+    # Bind mounts van hetzelfde subvolume hebben identieke st_dev en
+    # total_gb, en worden samengevoegd: de mount met hoogste prioriteit
+    # wint. BTRFS-subvolumes met verschillende total_gb blijven apart.
     def _mount_priority(mp: str) -> int:
         """Bepaal prioriteit van een mountpoint (lager = beter)."""
-        if mp == "/":
+        clean = _clean_mountpoint(mp)
+        if clean == "/":
             return 0
-        if mp.startswith("/run/rugix/mounts/"):
-            suffix = mp[len("/run/rugix/mounts/"):]
+        if clean.startswith("/run/rugix/mounts/"):
+            suffix = clean[len("/run/rugix/mounts/"):]
             order = {"system": 1, "data": 2, "config": 3}
             return order.get(suffix, 10)
-        return 50 + _mount_depth(mp)
+        return 50 + _mount_depth(clean)
 
-    best_per_key: dict[tuple[str, float], dict] = {}
+    best_per_key: dict[tuple[int, float], dict] = {}
     for m in raw_mounts:
-        key = (m["device"], m["total_gb"])
+        key = (m["_st_dev"], m["total_gb"])
         if key not in best_per_key:
             best_per_key[key] = m
         else:
@@ -205,6 +237,7 @@ def _read_host_mounts_cached() -> list[dict]:
     # Verwijder interne velden
     for m in result:
         m.pop("_depth", None)
+        m.pop("_st_dev", None)
 
     _MOUNT_CACHE = {"data": result, "timestamp": now}
     return result
